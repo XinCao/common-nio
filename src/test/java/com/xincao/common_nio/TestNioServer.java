@@ -11,8 +11,8 @@ import com.xincao.common_nio.util.ThreadPoolManager;
 public class TestNioServer {
 
     public static void main(String... args) {
-        new DeadLockDetector(60, DeadLockDetector.RESTART).start(); // 检查死锁
         ThreadPoolManager.getInstance();
         IOServer.getInstance().connect();
+        DeadLockDetector.detector(60, DeadLockDetector.Dealt.RESTART);
     }
 }

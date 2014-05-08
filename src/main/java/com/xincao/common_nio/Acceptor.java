@@ -24,7 +24,7 @@ public class Acceptor {
         ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
         SocketChannel socketChannel = serverSocketChannel.accept();
         socketChannel.configureBlocking(false);
-        Dispatcher dispatcher = nioServer.getReadWriteDispatcher();
+        Dispatcher dispatcher = nioServer.getReadWriteDispatcher(); // 获得一个读写监听器
         factory.create(socketChannel, dispatcher);
     }
 }

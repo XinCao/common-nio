@@ -11,109 +11,135 @@ import org.slf4j.LoggerFactory;
 
 public class NioServer {
 
-    private static final Logger log = LoggerFactory.getLogger(NioServer.class.getName());
+    private static final Logger logger = LoggerFactory.getLogger(NioServer.class.getName());
     private final List<SelectionKey> serverChannelKeys = new ArrayList<SelectionKey>();
-    private Dispatcher acceptDispatcher;
-    private int currentReadWriteDispatcher;
+    private AcceptDispatcherImpl acceptDispatcher;
+    private int currentReadWriteDispatcher = 0;
     private Dispatcher[] readWriteDispatchers;
     private final DisconnectionThreadPool dcPool;
-    private int readWriteThreads;
+    private int readWriteThreads = 5;
     private ServerCfg[] cfgs;
 
     public NioServer(int readWriteThreads, DisconnectionThreadPool dcPool, ServerCfg... cfgs) {
         this.dcPool = dcPool;
-        this.readWriteThreads = readWriteThreads;
+        if (readWriteThreads > 0) {
+            this.readWriteThreads = readWriteThreads;
+        } else {
+            logger.info("readWriteThreads num is default = {}", this.readWriteThreads);
+        }
         this.cfgs = cfgs;
     }
 
+    /**
+     * 启动NIO-Server
+     */
     public void connect() {
         try {
-            this.initDispatchers(readWriteThreads, dcPool);
+            this.startDispatchers(dcPool);
             for (ServerCfg cfg : cfgs) {
                 ServerSocketChannel serverChannel = ServerSocketChannel.open();
                 serverChannel.configureBlocking(false);
                 InetSocketAddress isa;
                 if ("*".equals(cfg.hostName)) {
                     isa = new InetSocketAddress(cfg.port);
-                    log.info("Server listening on all available IPs on Port " + cfg.port + " for " + cfg.connectionName);
+                    logger.info("Server listening on all available IPs on Port " + cfg.port + " for " + cfg.connectionName);
                 } else {
                     isa = new InetSocketAddress(cfg.hostName, cfg.port);
-                    log.info("Server listening on IP: " + cfg.hostName + " Port " + cfg.port + " for " + cfg.connectionName);
+                    logger.info("Server listening on IP: " + cfg.hostName + " Port " + cfg.port + " for " + cfg.connectionName);
                 }
                 serverChannel.socket().bind(isa);
-                SelectionKey acceptKey = ((AcceptDispatcherImpl)getAcceptDispatcher()).register(serverChannel, SelectionKey.OP_ACCEPT, new Acceptor(cfg.factory, this));
+                SelectionKey acceptKey = getAcceptDispatcher().register(serverChannel, SelectionKey.OP_ACCEPT, new Acceptor(cfg.factory, this));
                 serverChannelKeys.add(acceptKey);
             }
-        } catch (Exception e) {
-            log.error("NioServer Initialization Error: " + e, e);
+        } catch (IOException e) {
+            logger.error("NioServer Initialization Error: " + e, e);
             throw new Error("NioServer Initialization Error!");
         }
     }
 
-    public final Dispatcher getAcceptDispatcher() {
+    /**
+     * 获得连接接受监听器
+     * 
+     * @return 
+     */
+    public final AcceptDispatcherImpl getAcceptDispatcher() {
         return acceptDispatcher;
     }
 
+    /**
+     * 获得一个连接读写监听器（每个监听器的负载均衡）
+     * 
+     * @return 
+     */
     public final Dispatcher getReadWriteDispatcher() {
         if (readWriteDispatchers.length == 1) {
             return readWriteDispatchers[0];
         }
-        if (currentReadWriteDispatcher >= readWriteDispatchers.length) {
+        if (currentReadWriteDispatcher >= readWriteThreads) {
             currentReadWriteDispatcher = 0;
         }
         return readWriteDispatchers[currentReadWriteDispatcher++];
     }
 
-    private void initDispatchers(int readWriteThreads, DisconnectionThreadPool dcPool) throws IOException {
+    /**
+     * 初始化线程
+     * 
+     * @param readWriteThreads
+     * @param dcPool
+     * @throws IOException 
+     */
+    private void startDispatchers(DisconnectionThreadPool dcPool) throws IOException {
         acceptDispatcher = new AcceptDispatcherImpl("Accept Dispatcher");
         acceptDispatcher.start();
-        if (readWriteThreads <= 0) {
-            acceptDispatcher = new AcceptReadWriteDispatcherImpl("AcceptReadWrite Dispatcher", dcPool);
-            acceptDispatcher.start();
-        } else {
-            readWriteDispatchers = new Dispatcher[readWriteThreads];
-            for (int i = 0; i < readWriteDispatchers.length; i++) {
-                readWriteDispatchers[i] = new AcceptReadWriteDispatcherImpl("ReadWrite-" + i + " Dispatcher", dcPool);
-                readWriteDispatchers[i].start();
-            }
+        readWriteDispatchers = new Dispatcher[this.readWriteThreads];
+        for (int i = 0; i < this.readWriteThreads; i++) {
+        readWriteDispatchers[i] = new AcceptReadWriteDispatcherImpl("ReadWrite-" + i + " Dispatcher", dcPool);
+        readWriteDispatchers[i].start();
         }
     }
 
+    /**
+     * 返回活跃连接个数
+     *
+     * @return 
+     */
     public final int getActiveConnections() {
         int count = 0;
         if (readWriteDispatchers != null) {
             for (Dispatcher d : readWriteDispatchers) {
                 count += d.selector().keys().size();
             }
+        } else {
+            logger.error("readWriteDispatchers array is null");
         }
         return count;
     }
 
     public final void shutdown() {
-        log.info("Closing ServerChannels...");
+        logger.info("Closing ServerChannels...");
         try {
             for (SelectionKey key : serverChannelKeys) {
                 key.cancel();
             }
-            log.info("ServerChannel closed.");
+            logger.info("ServerChannel closed.");
         } catch (Exception e) {
-            log.error("Error during closing ServerChannel, " + e, e);
+            logger.error("Error during closing ServerChannel, " + e, e);
         }
         this.notifyServerClose();
         try {
             Thread.sleep(1000);
         } catch (Throwable t) {
-            log.warn("Nio thread was interrupted during shutdown", t);
+            logger.warn("Nio thread was interrupted during shutdown", t);
         }
-        log.info(" Active connections: " + getActiveConnections());
-        log.info("Forced Disconnecting all connections...");
+        logger.info(" Active connections: " + getActiveConnections());
+        logger.info("Forced Disconnecting all connections...");
         this.closeAll();
-        log.info(" Active connections: " + getActiveConnections());
+        logger.info(" Active connections: " + getActiveConnections());
         dcPool.waitForDisconnectionTasks();
         try {
             Thread.sleep(1000);
         } catch (Throwable t) {
-            log.warn("Nio thread was interrupted during shutdown", t);
+            logger.warn("Nio thread was interrupted during shutdown", t);
         }
     }
 
