@@ -5,9 +5,14 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.Iterator;
 
-public class AcceptDispatcherImpl extends Dispatcher {
+/**
+ *  新创建连接监听
+ *
+ * @author caoxin
+ */
+public class AcceptDispatcher extends Dispatcher {
 
-    public AcceptDispatcherImpl(String name) throws IOException {
+    public AcceptDispatcher(String name) throws IOException {
         super(name);
     }
 
@@ -24,7 +29,7 @@ public class AcceptDispatcherImpl extends Dispatcher {
             }
         }
     }
-    
+
     public final SelectionKey register(SelectableChannel ch, int ops, Acceptor att) throws IOException {
         synchronized (gate) {
             selector.wakeup();
@@ -35,8 +40,8 @@ public class AcceptDispatcherImpl extends Dispatcher {
     public final void accept(SelectionKey key) {
         try {
             ((Acceptor) key.attachment()).accept(key);
-        } catch (Exception e) {
-            log.error("Error while accepting connection: +" + e, e);
+        } catch (IOException e) {
+            logger.error("Error while accepting connection: +" + e, e);
         }
     }
 }

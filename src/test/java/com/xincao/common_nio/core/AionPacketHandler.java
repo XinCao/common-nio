@@ -43,9 +43,9 @@ public class AionPacketHandler {
                 }
             }
         }
-        private int opcode;
-        private Class<AionClientPacket> clazz;
-        private State state;
+        private final int opcode;
+        private final Class<AionClientPacket> clazz;
+        private final State state;
 
         private AionClientKind(int opcode, Class clazz, State state) {
             this.opcode = opcode;

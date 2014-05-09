@@ -10,5 +10,5 @@ import java.nio.channels.SocketChannel;
  */
 public interface ConnectionFactory {
 
-    public AConnection create(SocketChannel socket, Dispatcher dispatcher) throws IOException;
+    public IConnection create(SocketChannel socket, IODispatcher ioDispatcher) throws IOException;
 }

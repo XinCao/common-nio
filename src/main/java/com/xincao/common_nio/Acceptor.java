@@ -6,7 +6,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 /**
- * 接收连接请求
+ * 连接接收器
  *
  * @author caoxin
  */
@@ -24,7 +24,7 @@ public class Acceptor {
         ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
         SocketChannel socketChannel = serverSocketChannel.accept();
         socketChannel.configureBlocking(false);
-        Dispatcher dispatcher = nioServer.getReadWriteDispatcher(); // 获得一个读写监听器
-        factory.create(socketChannel, dispatcher);
+        IODispatcher ioDispatcher = nioServer.getIODispatcher(); // 获得一个读写监听器
+        factory.create(socketChannel, ioDispatcher);
     }
 }

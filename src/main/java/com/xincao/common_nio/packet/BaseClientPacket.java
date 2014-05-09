@@ -1,13 +1,10 @@
 package com.xincao.common_nio.packet;
 
-import com.xincao.common_nio.AConnection;
+import com.xincao.common_nio.IConnection;
 import java.nio.ByteBuffer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public abstract class BaseClientPacket<T extends AConnection> extends BasePacket implements Runnable {
+public abstract class BaseClientPacket<T extends IConnection> extends BasePacket implements Runnable {
 
-    private static final Logger log = LoggerFactory.getLogger(BaseClientPacket.class);
     private T client;
     private ByteBuffer buf;
 
@@ -32,12 +29,12 @@ public abstract class BaseClientPacket<T extends AConnection> extends BasePacket
         try {
             readImpl();
             if (getRemainingBytes() > 0) {
-                log.debug("Packet " + this + " not fully readed!");
+                logger.debug("Packet " + this + " not fully readed!");
             }
 
             return true;
         } catch (Exception re) {
-            log.error("Reading failed for packet " + this, re);
+            logger.error("Reading failed for packet " + this, re);
             return false;
         }
     }
@@ -52,7 +49,7 @@ public abstract class BaseClientPacket<T extends AConnection> extends BasePacket
         try {
             return buf.getInt();
         } catch (Exception e) {
-            log.error("Missing D for: " + this);
+            logger.error("Missing D for: " + this);
         }
         return 0;
     }
@@ -61,7 +58,7 @@ public abstract class BaseClientPacket<T extends AConnection> extends BasePacket
         try {
             return buf.get() & 0xFF;
         } catch (Exception e) {
-            log.error("Missing C for: " + this);
+            logger.error("Missing C for: " + this);
         }
         return 0;
     }
@@ -70,7 +67,7 @@ public abstract class BaseClientPacket<T extends AConnection> extends BasePacket
         try {
             return buf.getShort() & 0xFFFF;
         } catch (Exception e) {
-            log.error("Missing H for: " + this);
+            logger.error("Missing H for: " + this);
         }
         return 0;
     }
@@ -79,7 +76,7 @@ public abstract class BaseClientPacket<T extends AConnection> extends BasePacket
         try {
             return buf.getDouble();
         } catch (Exception e) {
-            log.error("Missing DF for: " + this);
+            logger.error("Missing DF for: " + this);
         }
         return 0;
     }
@@ -88,7 +85,7 @@ public abstract class BaseClientPacket<T extends AConnection> extends BasePacket
         try {
             return buf.getFloat();
         } catch (Exception e) {
-            log.error("Missing F for: " + this);
+            logger.error("Missing F for: " + this);
         }
         return 0;
     }
@@ -97,20 +94,20 @@ public abstract class BaseClientPacket<T extends AConnection> extends BasePacket
         try {
             return buf.getLong();
         } catch (Exception e) {
-            log.error("Missing Q for: " + this);
+            logger.error("Missing Q for: " + this);
         }
         return 0;
     }
 
     protected final String readS() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         char ch;
         try {
             while ((ch = buf.getChar()) != 0) {
                 sb.append(ch);
             }
         } catch (Exception e) {
-            log.error("Missing S for: " + this);
+            logger.error("Missing S for: " + this);
         }
         return sb.toString();
     }
@@ -120,7 +117,7 @@ public abstract class BaseClientPacket<T extends AConnection> extends BasePacket
         try {
             buf.get(result);
         } catch (Exception e) {
-            log.error("Missing byte[] for: " + this);
+            logger.error("Missing byte[] for: " + this);
         }
         return result;
     }

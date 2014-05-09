@@ -11,14 +11,20 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PacketProcessor<T extends AConnection> {
+/**
+ * 包处理器
+ *
+ * @author caoxin
+ * @param <T> 
+ */
+public class PacketProcessor<T extends IConnection> {
 
     private static final Logger log = LoggerFactory.getLogger(PacketProcessor.class.getName());
     private final static int reduceThreshold = 3; // 最小阈值
     private final static int increaseThreshold = 50; // 最大阈值
     private final Lock lock = new ReentrantLock();
     private final Condition notEmpty = lock.newCondition();
-    private final List<BaseClientPacket<T>> packets = new LinkedList<BaseClientPacket<T>>();
+    private final List<BaseClientPacket<T>> packets = new LinkedList<>();
     private final List<Thread> threads = new ArrayList<Thread>();
     private final int minThreads;
     private final int maxThreads;

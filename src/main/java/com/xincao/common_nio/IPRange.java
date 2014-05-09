@@ -8,6 +8,14 @@ public class IPRange {
     private final long max;
     private final byte[] address;
 
+    /**
+     * 点分十进制IP范围
+     * new IPRange("192.168.0.0", "192.168.0.255", "192.168.0.1");
+     * 
+     * @param min
+     * @param max
+     * @param address 
+     */
     public IPRange(String min, String max, String address) {
         this.min = toLong(toByteArray(min));
         this.max = toLong(toByteArray(max));
@@ -88,9 +96,9 @@ public class IPRange {
         result = 31 * result + Arrays.hashCode(address);
         return result;
     }
-	
-	public static void main(String... args) {
-		IPRange ipRange = new IPRange("192.168.0.0", "192.168.0.255", "192.168.0.1");
-		System.out.println(ipRange.isInRange("192.168.0.1"));
-	}
+
+    public static void main(String... args) {
+        IPRange ipRange = new IPRange("192.168.0.0", "192.168.0.255", "192.168.0.1");
+        System.out.println(ipRange.isInRange("192.168.0.1"));
+    }
 }

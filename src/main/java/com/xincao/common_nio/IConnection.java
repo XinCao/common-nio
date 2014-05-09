@@ -6,29 +6,29 @@ import java.nio.ByteOrder;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
-public abstract class AConnection {
+public abstract class IConnection {
 
     private final SocketChannel socketChannel;
-    private final Dispatcher dispatcher;
+    private final IODispatcher ioDispatcher;
     private SelectionKey key;
     protected boolean pendingClose;
     protected boolean isForcedClosing;
-    protected boolean closed;
+    protected boolean closed; // 关闭套接字管道
     protected final Object guard = new Object();
     public final ByteBuffer writeBuffer;
     public final ByteBuffer readBuffer;
     private final String ip;
     private boolean locked = false;
 
-    public AConnection(SocketChannel sc, Dispatcher d) throws IOException {
+    public IConnection(SocketChannel sc, IODispatcher ioDispatcher) throws IOException {
         socketChannel = sc;
-        dispatcher = d;
+        this.ioDispatcher = ioDispatcher;
         writeBuffer = ByteBuffer.allocate(8192 * 2);
         writeBuffer.flip();
         writeBuffer.order(ByteOrder.LITTLE_ENDIAN);
         readBuffer = ByteBuffer.allocate(8192 * 2);
         readBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        ((AcceptReadWriteDispatcherImpl)dispatcher).register(socketChannel, SelectionKey.OP_READ, this);
+        this.ioDispatcher.register(socketChannel, SelectionKey.OP_READ, this);
         this.ip = socketChannel.socket().getInetAddress().getHostAddress();
     }
 
@@ -39,10 +39,10 @@ public abstract class AConnection {
         }
     }
 
-	/**
+    /**
      * 关闭连接
-     * 
-     * @param forced 
+     *
+     * @param forced
      */
     public final void close(boolean forced) {
         synchronized (guard) {
@@ -50,15 +50,14 @@ public abstract class AConnection {
                 return;
             }
             isForcedClosing = forced;
-            ((AcceptReadWriteDispatcherImpl)getDispatcher()).closeConnection(this);
+            getIODispatcher().closeConnection(this);
         }
     }
 
-
-	/**
-	 * 关闭套接字管道
-	 */
-    public final boolean onlyClose() {
+    /**
+     * 关闭套接字管道
+     */
+    public final boolean closeSocketChannel() {
         synchronized (guard) {
             if (closed) {
                 return false;
@@ -76,7 +75,7 @@ public abstract class AConnection {
         return true;
     }
 
-	protected final boolean isPendingClose() {
+    protected final boolean isPendingClose() {
         return pendingClose && !closed;
     }
 
@@ -84,7 +83,7 @@ public abstract class AConnection {
         return pendingClose || closed;
     }
 
-	public boolean tryLockConnection() {
+    public boolean tryLockConnection() {
         if (locked) {
             return false;
         }
@@ -95,15 +94,15 @@ public abstract class AConnection {
         locked = false;
     }
 
-    private Dispatcher getDispatcher() {
-        return dispatcher;
+    private IODispatcher getIODispatcher() {
+        return ioDispatcher;
     }
 
     public SocketChannel getSocketChannel() {
         return socketChannel;
     }
-	
-	public final void setKey(SelectionKey key) {
+
+    public final void setKey(SelectionKey key) {
         this.key = key;
     }
 

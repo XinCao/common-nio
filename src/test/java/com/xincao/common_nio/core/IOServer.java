@@ -2,7 +2,7 @@ package com.xincao.common_nio.core;
 
 import com.xincao.common_nio.NioServer;
 import com.xincao.common_nio.ServerCfg;
-import com.xincao.common_nio.util.ThreadPoolManager;
+import com.xincao.common_nio.service.ThreadPoolManager;
 
 public class IOServer {
 

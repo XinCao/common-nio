@@ -12,20 +12,20 @@ import org.slf4j.LoggerFactory;
 public class NioServer {
 
     private static final Logger logger = LoggerFactory.getLogger(NioServer.class.getName());
-    private final List<SelectionKey> serverChannelKeys = new ArrayList<SelectionKey>();
-    private AcceptDispatcherImpl acceptDispatcher;
-    private int currentReadWriteDispatcher = 0;
-    private Dispatcher[] readWriteDispatchers;
+    private final List<SelectionKey> serverChannelKeys = new ArrayList<>();
+    private AcceptDispatcher acceptDispatcher;
+    private int currentIODispatcher = 0;
+    private IODispatcher[] ioDispatchers;
     private final DisconnectionThreadPool dcPool;
-    private int readWriteThreads = 5;
-    private ServerCfg[] cfgs;
+    private int ioThreads = 5;
+    private final ServerCfg[] cfgs;
 
-    public NioServer(int readWriteThreads, DisconnectionThreadPool dcPool, ServerCfg... cfgs) {
+    public NioServer(int ioThreads, DisconnectionThreadPool dcPool, ServerCfg... cfgs) {
         this.dcPool = dcPool;
-        if (readWriteThreads > 0) {
-            this.readWriteThreads = readWriteThreads;
+        if (ioThreads > 0) {
+            this.ioThreads = ioThreads;
         } else {
-            logger.info("readWriteThreads num is default = {}", this.readWriteThreads);
+            logger.info("ioThreads num is default = {}", this.ioThreads);
         }
         this.cfgs = cfgs;
     }
@@ -62,7 +62,7 @@ public class NioServer {
      * 
      * @return 
      */
-    public final AcceptDispatcherImpl getAcceptDispatcher() {
+    public final AcceptDispatcher getAcceptDispatcher() {
         return acceptDispatcher;
     }
 
@@ -71,14 +71,14 @@ public class NioServer {
      * 
      * @return 
      */
-    public final Dispatcher getReadWriteDispatcher() {
-        if (readWriteDispatchers.length == 1) {
-            return readWriteDispatchers[0];
+    public final IODispatcher getIODispatcher() {
+        if (ioDispatchers.length == 1) {
+            return ioDispatchers[0];
         }
-        if (currentReadWriteDispatcher >= readWriteThreads) {
-            currentReadWriteDispatcher = 0;
+        if (currentIODispatcher >= ioThreads) {
+            currentIODispatcher = 0;
         }
-        return readWriteDispatchers[currentReadWriteDispatcher++];
+        return ioDispatchers[currentIODispatcher++];
     }
 
     /**
@@ -89,12 +89,12 @@ public class NioServer {
      * @throws IOException 
      */
     private void startDispatchers(DisconnectionThreadPool dcPool) throws IOException {
-        acceptDispatcher = new AcceptDispatcherImpl("Accept Dispatcher");
+        acceptDispatcher = new AcceptDispatcher("Accept Dispatcher");
         acceptDispatcher.start();
-        readWriteDispatchers = new Dispatcher[this.readWriteThreads];
-        for (int i = 0; i < this.readWriteThreads; i++) {
-        readWriteDispatchers[i] = new AcceptReadWriteDispatcherImpl("ReadWrite-" + i + " Dispatcher", dcPool);
-        readWriteDispatchers[i].start();
+        ioDispatchers = new IODispatcher[this.ioThreads];
+        for (int i = 0; i < this.ioThreads; i++) {
+        ioDispatchers[i] = new IODispatcher("IO-" + i + " Dispatcher", dcPool);
+        ioDispatchers[i].start();
         }
     }
 
@@ -105,16 +105,19 @@ public class NioServer {
      */
     public final int getActiveConnections() {
         int count = 0;
-        if (readWriteDispatchers != null) {
-            for (Dispatcher d : readWriteDispatchers) {
+        if (ioDispatchers != null) {
+            for (Dispatcher d : ioDispatchers) {
                 count += d.selector().keys().size();
             }
         } else {
-            logger.error("readWriteDispatchers array is null");
+            logger.error("ioDispatchers array is null");
         }
         return count;
     }
 
+    /**
+     * 服务器关闭
+     */
     public final void shutdown() {
         logger.info("Closing ServerChannels...");
         try {
@@ -128,7 +131,7 @@ public class NioServer {
         this.notifyServerClose();
         try {
             Thread.sleep(1000);
-        } catch (Throwable t) {
+        } catch (InterruptedException t) {
             logger.warn("Nio thread was interrupted during shutdown", t);
         }
         logger.info(" Active connections: " + getActiveConnections());
@@ -138,20 +141,20 @@ public class NioServer {
         dcPool.waitForDisconnectionTasks();
         try {
             Thread.sleep(1000);
-        } catch (Throwable t) {
+        } catch (InterruptedException t) {
             logger.warn("Nio thread was interrupted during shutdown", t);
         }
     }
 
     /**
-     * Calls onServerClose method for all active connections.
+     * Calls onServerClose method for all active connections.（服务器关闭，对所有的连接进行通知）
      */
     private void notifyServerClose() {
-        if (readWriteDispatchers != null) {
-            for (Dispatcher d : readWriteDispatchers) {
+        if (ioDispatchers != null) {
+            for (Dispatcher d : ioDispatchers) {
                 for (SelectionKey key : d.selector().keys()) {
-                    if (key.attachment() instanceof AConnection) {
-                        ((AConnection) key.attachment()).onServerClose();
+                    if (key.attachment() instanceof IConnection) {
+                        ((IConnection) key.attachment()).onServerClose();
                     }
                 }
             }
@@ -159,14 +162,14 @@ public class NioServer {
     }
 
     /**
-     * Close all active connections.
+     * Close all active connections. （服务器关闭，对所有的连接进行一些备份工作）
      */
     private void closeAll() {
-        if (readWriteDispatchers != null) {
-            for (Dispatcher d : readWriteDispatchers) {
+        if (ioDispatchers != null) {
+            for (Dispatcher d : ioDispatchers) {
                 for (SelectionKey key : d.selector().keys()) {
-                    if (key.attachment() instanceof AConnection) {
-                        ((AConnection) key.attachment()).close(true);
+                    if (key.attachment() instanceof IConnection) {
+                        ((IConnection) key.attachment()).close(true);
                     }
                 }
             }

@@ -10,12 +10,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class AcceptReadWriteDispatcherImpl extends Dispatcher {
-    
-    private final DisconnectionThreadPool dcPool;
-    private final List<AConnection> pendingClose = new ArrayList<AConnection>();
+/**
+ * 连接IO监听
+ * 
+ * @author caoxin
+ */
+public class IODispatcher extends Dispatcher {
 
-    public AcceptReadWriteDispatcherImpl(String name, DisconnectionThreadPool dcPool) throws IOException {
+    private final DisconnectionThreadPool dcPool;
+    private final List<IConnection> pendingClose = new ArrayList<>();
+
+    public IODispatcher(String name, DisconnectionThreadPool dcPool) throws IOException {
         super(name);
         this.dcPool = dcPool;
     }
@@ -50,7 +55,15 @@ public class AcceptReadWriteDispatcherImpl extends Dispatcher {
         }
     }
 
-    public final void register(SelectableChannel ch, int ops, AConnection att) throws IOException {
+    /**
+     * 注册套接字管道的IO监听事件
+     * 
+     * @param ch
+     * @param ops
+     * @param att
+     * @throws IOException 
+     */
+    public final void register(SelectableChannel ch, int ops, IConnection att) throws IOException {
         synchronized (gate) {
             selector.wakeup();
             att.setKey(ch.register(selector, ops, att));
@@ -62,7 +75,7 @@ public class AcceptReadWriteDispatcherImpl extends Dispatcher {
      * 
      * @param con 
      */
-    public void closeConnection(AConnection con) {
+    public void closeConnection(IConnection con) {
         synchronized (pendingClose) {
             pendingClose.add(con);
         }
@@ -70,22 +83,22 @@ public class AcceptReadWriteDispatcherImpl extends Dispatcher {
 
     private void processPendingClose() {
         synchronized (pendingClose) {
-            for (AConnection connection : pendingClose) {
+            for (IConnection connection : pendingClose) {
                 closeConnectionImpl(connection);
             }
             pendingClose.clear();
         }
     }
 
-    private void closeConnectionImpl(AConnection con) {
-        if (con.onlyClose()) {
+    private void closeConnectionImpl(IConnection con) {
+        if (con.closeSocketChannel()) {
             dcPool.scheduleDisconnection(new DisconnectionTask(con), con.getDisconnectionDelay());
         }
     }
 
     private void read(SelectionKey key) {
         SocketChannel socketChannel = (SocketChannel) key.channel();
-        AConnection con = (AConnection) key.attachment();
+        IConnection con = (IConnection) key.attachment();
         ByteBuffer rb = con.readBuffer;
         int numRead;
         try {
@@ -115,7 +128,7 @@ public class AcceptReadWriteDispatcherImpl extends Dispatcher {
         }
     }
 
-    private boolean parse(AConnection con, ByteBuffer buf) {
+    private boolean parse(IConnection con, ByteBuffer buf) {
         short sz = 0;
         try {
             buf.reset();
@@ -128,14 +141,14 @@ public class AcceptReadWriteDispatcherImpl extends Dispatcher {
             buf.position(buf.position() + sz); // 写一个包数据开始处
             return con.processData(b);
         } catch (IllegalArgumentException e) {
-            log.warn("Error on parsing input from client - account: " + con + " packet size: " + sz + " real size:" + buf.remaining(), e);
+            logger.warn("Error on parsing input from client - account: " + con + " packet size: " + sz + " real size:" + buf.remaining(), e);
             return false;
         }
     }
 
     private void write(SelectionKey key) {
         SocketChannel socketChannel = (SocketChannel) key.channel();
-        AConnection con = (AConnection) key.attachment();
+        IConnection con = (IConnection) key.attachment();
         int numWrite;
         ByteBuffer wb = con.writeBuffer;
         if (wb.hasRemaining()) {
@@ -146,7 +159,7 @@ public class AcceptReadWriteDispatcherImpl extends Dispatcher {
                 return;
             }
             if (numWrite == 0) {
-                log.info("Write " + numWrite + " ip: " + con.getIP());
+                logger.info("Write " + numWrite + " ip: " + con.getIP());
                 return;
             }
             if (wb.hasRemaining()) { // 不能被写的数据
@@ -167,7 +180,7 @@ public class AcceptReadWriteDispatcherImpl extends Dispatcher {
                 return;
             }
             if (numWrite == 0) {
-                log.info("Write " + numWrite + " ip: " + con.getIP());
+                logger.info("Write " + numWrite + " ip: " + con.getIP());
                 return;
             }
             if (wb.hasRemaining()) { // 不能被写的数据

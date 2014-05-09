@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author caoxin
  */
-public class SocketClient {
+public class AionClient {
 
     public static void main(String... args) throws Exception {
         BufferedReader cmdBufferReader = new BufferedReader(new InputStreamReader(System.in));

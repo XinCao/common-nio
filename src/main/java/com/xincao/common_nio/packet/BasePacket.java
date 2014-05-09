@@ -1,7 +1,11 @@
 package com.xincao.common_nio.packet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class BasePacket {
 
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     public static final String TYPE_PATTERN = "[%s] 0x%02X %s";
     private final PacketType packetType;
     private int opcode;

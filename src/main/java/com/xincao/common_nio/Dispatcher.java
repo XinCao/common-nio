@@ -6,9 +6,14 @@ import java.nio.channels.spi.SelectorProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 监听器（IO seletor） （接受，可读，可写）
+ * 
+ * @author caoxin
+ */
 public abstract class Dispatcher extends Thread {
 
-    protected final Logger log = LoggerFactory.getLogger(this.getClass());
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final Selector selector;
     protected final Object gate = new Object(); // Object on witch register vs selector.select are synchronized
 
@@ -20,18 +25,18 @@ public abstract class Dispatcher extends Thread {
     abstract protected void dispatch() throws IOException;
 
     @Override
-    public void run() {
+    public void run() { // 经典服务器死循环
         while(true) {
             try {
                 dispatch();
                 synchronized (gate) {
                 }
-            } catch (Exception e) {
-                log.error("Dispatcher error! " + e, e);
+            } catch (IOException e) {
+                logger.error("Dispatcher error! " + e, e);
             }
         }
     }
-    
+
     public final Selector selector() {
         return this.selector;
     }

@@ -1,7 +1,7 @@
 package com.xincao.common_nio.core;
 
-import com.xincao.common_nio.AConnection;
-import com.xincao.common_nio.Dispatcher;
+import com.xincao.common_nio.IODispatcher;
+import com.xincao.common_nio.IConnection;
 import com.xincao.common_nio.PacketProcessor;
 import com.xincao.common_nio.core.AionPacketHandler.AionServerKind;
 import com.xincao.common_nio.packet.client.AionClientPacket;
@@ -14,24 +14,23 @@ import java.util.Deque;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AionConnection extends AConnection {
+public class AionConnection extends IConnection {
 
     private static final Logger log = LoggerFactory.getLogger(AionConnection.class);
-    private final static PacketProcessor<AionConnection> processor = new PacketProcessor<AionConnection>(1, 8);
-    private final Deque<AionServerPacket> sendMsgQueue = new ArrayDeque<AionServerPacket>();
-    private int sessionId = hashCode();
+    private final static PacketProcessor<AionConnection> processor = new PacketProcessor<>(1, 8);
+    private final Deque<AionServerPacket> sendMsgQueue = new ArrayDeque<>();
+    private final int sessionId = hashCode();
     private boolean joinedGs;
     private State state;
 
     public static enum State {
-
         CONNECTED,
         AUTHED_GG,
         AUTHED_LOGIN
     }
 
-    public AionConnection(SocketChannel sc, Dispatcher d) throws IOException {
-        super(sc, d);
+    public AionConnection(SocketChannel sc, IODispatcher ioDispatcher )throws IOException {
+        super(sc, ioDispatcher);
         state = State.CONNECTED;
         String ip = getIP();
         log.info("connection from: " + ip);

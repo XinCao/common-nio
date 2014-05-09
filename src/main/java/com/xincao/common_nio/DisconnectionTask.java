@@ -1,10 +1,15 @@
 package com.xincao.common_nio;
 
+/**
+ * 断开连接任务(例如，备份)
+ * 
+ * @author caoxin
+ */
 public class DisconnectionTask implements Runnable {
 
-    private AConnection connection;
+    private IConnection connection;
 
-    public DisconnectionTask(AConnection connection) {
+    public DisconnectionTask(IConnection connection) {
         this.connection = connection;
     }
 

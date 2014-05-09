@@ -1,11 +1,11 @@
-package com.xincao.common_nio.util;
+package com.xincao.common_nio.service;
 
 import com.xincao.common_nio.DisconnectionTask;
 import com.xincao.common_nio.DisconnectionThreadPool;
-import com.xincao.common_util.ScheduledThreadPoolExecutorAE;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -17,8 +17,8 @@ public class ThreadPoolManager implements DisconnectionThreadPool {
 
     private static final Logger log = LoggerFactory.getLogger(ThreadPoolManager.class);
     private static ThreadPoolManager instance = new ThreadPoolManager();
-    private ScheduledThreadPoolExecutorAE scheduledThreadPool;
-    private ScheduledThreadPoolExecutorAE disconnectionScheduledThreadPool;
+    private ScheduledThreadPoolExecutor scheduledThreadPool;
+    private ScheduledThreadPoolExecutor disconnectionScheduledThreadPool;
     private ThreadPoolExecutor gameServerPacketsThreadPool;
 
     public static ThreadPoolManager getInstance() {
@@ -26,8 +26,8 @@ public class ThreadPoolManager implements DisconnectionThreadPool {
     }
 
     private ThreadPoolManager() {
-        scheduledThreadPool = new ScheduledThreadPoolExecutorAE(4, new PriorityThreadFactory("ScheduledThreadPool", Thread.NORM_PRIORITY));
-        disconnectionScheduledThreadPool = new ScheduledThreadPoolExecutorAE(4, new PriorityThreadFactory("DisconnectionScheduledThreadPool", Thread.NORM_PRIORITY));
+        scheduledThreadPool = new ScheduledThreadPoolExecutor(4, new PriorityThreadFactory("ScheduledThreadPool", Thread.NORM_PRIORITY));
+        disconnectionScheduledThreadPool = new ScheduledThreadPoolExecutor(4, new PriorityThreadFactory("DisconnectionScheduledThreadPool", Thread.NORM_PRIORITY));
         gameServerPacketsThreadPool = new ThreadPoolExecutor(4, Integer.MAX_VALUE, 5L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new PriorityThreadFactory("Game Server Packet Pool", Thread.NORM_PRIORITY + 3));
     }
 
