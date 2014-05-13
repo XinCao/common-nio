@@ -17,8 +17,8 @@ import org.slf4j.LoggerFactory;
 public class AionConnection extends IConnection {
 
     private static final Logger log = LoggerFactory.getLogger(AionConnection.class);
-    private final static PacketProcessor<AionConnection> processor = new PacketProcessor<>(1, 8);
-    private final Deque<AionServerPacket> sendMsgQueue = new ArrayDeque<>();
+    private final static PacketProcessor<AionConnection> processor = new PacketProcessor<AionConnection>(1, 8);
+    private final Deque<AionServerPacket> sendMsgQueue = new ArrayDeque<AionServerPacket>();
     private final int sessionId = hashCode();
     private boolean joinedGs;
     private State state;

@@ -27,30 +27,30 @@ public class IODispatcher extends Dispatcher {
 
     @Override
     protected void dispatch() throws IOException {
-        int selected = selector.select();
         this.processPendingClose();
-        if (selected != 0) {
-            Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
-            while (selectedKeys.hasNext()) {
-                SelectionKey key = selectedKeys.next();
-                selectedKeys.remove();
-                if (!key.isValid()) {
-                    continue;
-                }
-                switch (key.readyOps()) {
-                    case SelectionKey.OP_READ:
-                        this.read(key);
-                        break;
-                    case SelectionKey.OP_WRITE:
+        if (selector.select() <= 0) {
+            return;
+        }
+        Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
+        while (selectedKeys.hasNext()) {
+            SelectionKey key = selectedKeys.next();
+            selectedKeys.remove();
+            if (!key.isValid()) {
+                continue;
+            }
+            switch (key.readyOps()) {
+                case SelectionKey.OP_READ:
+                    this.read(key);
+                    break;
+                case SelectionKey.OP_WRITE:
+                    this.write(key);
+                    break;
+                case SelectionKey.OP_READ | SelectionKey.OP_WRITE:
+                    this.read(key);
+                    if (key.isValid()) {
                         this.write(key);
-                        break;
-                    case SelectionKey.OP_READ | SelectionKey.OP_WRITE:
-                        this.read(key);
-                        if (key.isValid()) {
-                            this.write(key);
-                        }
-                        break;
-                }
+                    }
+                    break;
             }
         }
     }
