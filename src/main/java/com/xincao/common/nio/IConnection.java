@@ -6,6 +6,11 @@ import java.nio.ByteOrder;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
+/**
+ * 连接对象（整个网络层向项目中暴漏的唯一对象）
+ * 
+ * @author sunground-android
+ */
 public abstract class IConnection {
 
     private final SocketChannel socketChannel;

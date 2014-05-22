@@ -1,5 +1,6 @@
 package com.xincao.common.nio;
 
+import com.xincao.common.nio.service.ThreadPoolManager;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +10,9 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +49,37 @@ public class AionClient {
             port = new Integer(cmd[1]);
             opcode = new Short(cmd[2]);
         }
+        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(50, Integer.MAX_VALUE, 5L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        int loop = 0;
+        while (++loop <= 2000) {
+            Client client = new Client (ip, port, opcode);
+            threadPool.execute(client);
+            System.out.println("this is the " + loop + client);
+        }
+    }
+
+    static class Client implements Runnable {
+
+        private String ip;
+        private int port;
+        private short opcode;
+
+        public Client (String ip, int port, short opcode) {
+            this.ip = ip;
+            this.port = port;
+            this.opcode = opcode;
+        }
+
+        public void run() {
+            try {
+                newClient (ip, port, opcode);
+            } catch (Exception e) {
+                
+            }
+        }
+    }
+
+    private static void newClient(String ip, int port, short opcode) throws Exception {
         Socket socket = new Socket(ip, port);
         OutputStream outputStream = socket.getOutputStream();
         Thread outInfoThread = new Thread(new OutputInfo(outputStream, opcode), "write thread");
