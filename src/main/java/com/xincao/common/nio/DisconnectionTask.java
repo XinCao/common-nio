@@ -7,14 +7,14 @@ package com.xincao.common.nio;
  */
 public class DisconnectionTask implements Runnable {
 
-    private IConnection connection;
+	private IConnection connection;
 
-    public DisconnectionTask(IConnection connection) {
-        this.connection = connection;
-    }
+	public DisconnectionTask(IConnection connection) {
+		this.connection = connection;
+	}
 
-    @Override
-    public void run() {
-        connection.onDisconnect();
-    }
+	@Override
+	public void run() {
+		connection.onDisconnect();
+	}
 }

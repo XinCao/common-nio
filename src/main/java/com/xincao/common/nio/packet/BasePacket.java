@@ -5,53 +5,54 @@ import org.slf4j.LoggerFactory;
 
 public abstract class BasePacket {
 
-    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-    public static final String TYPE_PATTERN = "[%s] 0x%02X %s";
-    private final PacketType packetType;
-    private int opcode;
+	public static enum PacketType {
 
-    protected BasePacket(PacketType packetType, int opcode) {
-        this.packetType = packetType;
-        this.opcode = opcode;
-    }
+		CLIENT("C"), SERVER("S");
+		private final String name;
 
-    protected BasePacket(PacketType packetType) {
-        this.packetType = packetType;
-    }
+		private PacketType(String name) {
+			this.name = name;
+		}
 
-    protected void setOpcode(int opcode) {
-        this.opcode = opcode;
-    }
+		public String getName() {
+			return name;
+		}
+	}
 
-    public final int getOpcode() {
-        return opcode;
-    }
+	public static final String TYPE_PATTERN = "[%s] 0x%02X %s";
+	protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+	private int opcode;
 
-    public final PacketType getPacketType() {
-        return packetType;
-    }
+	private final PacketType packetType;
 
-    public String getPacketName() {
-        return this.getClass().getSimpleName();
-    }
+	protected BasePacket(PacketType packetType) {
+		this.packetType = packetType;
+	}
 
-    public static enum PacketType {
+	protected BasePacket(PacketType packetType, int opcode) {
+		this.packetType = packetType;
+		this.opcode = opcode;
+	}
 
-        SERVER("S"),
-        CLIENT("C");
-        private final String name;
+	public final int getOpcode() {
+		return opcode;
+	}
 
-        private PacketType(String name) {
-            this.name = name;
-        }
+	public String getPacketName() {
+		return this.getClass().getSimpleName();
+	}
 
-        public String getName() {
-            return name;
-        }
-    }
+	public final PacketType getPacketType() {
+		return packetType;
+	}
 
-    @Override
-    public String toString() {
-        return String.format(TYPE_PATTERN, getPacketType().getName(), getOpcode(), getPacketName());
-    }
+	protected void setOpcode(int opcode) {
+		this.opcode = opcode;
+	}
+
+	@Override
+	public String toString() {
+		return String.format(TYPE_PATTERN, getPacketType().getName(),
+				getOpcode(), getPacketName());
+	}
 }

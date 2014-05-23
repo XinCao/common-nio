@@ -1,7 +1,5 @@
 package com.xincao.common.nio.service;
 
-import com.xincao.common.nio.DisconnectionTask;
-import com.xincao.common.nio.DisconnectionThreadPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
@@ -10,142 +8,163 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.xincao.common.nio.DisconnectionTask;
+import com.xincao.common.nio.DisconnectionThreadPool;
+
 public class ThreadPoolManager implements DisconnectionThreadPool {
 
-    private static final Logger log = LoggerFactory.getLogger(ThreadPoolManager.class);
-    private static ThreadPoolManager instance = new ThreadPoolManager();
-    private ScheduledThreadPoolExecutor scheduledThreadPool;
-    private ScheduledThreadPoolExecutor disconnectionScheduledThreadPool;
-    private ThreadPoolExecutor gameServerPacketsThreadPool;
+	/**
+	 * PriorityThreadFactory creating new threads for ThreadPoolManager
+	 * 
+	 */
+	private class PriorityThreadFactory implements ThreadFactory {
 
-    public static ThreadPoolManager getInstance() {
-        return instance;
-    }
+		private ThreadGroup group;
+		private String name;
+		private int prio;
+		private AtomicInteger threadNumber = new AtomicInteger(1);
 
-    private ThreadPoolManager() {
-        scheduledThreadPool = new ScheduledThreadPoolExecutor(4, new PriorityThreadFactory("ScheduledThreadPool", Thread.NORM_PRIORITY));
-        disconnectionScheduledThreadPool = new ScheduledThreadPoolExecutor(4, new PriorityThreadFactory("DisconnectionScheduledThreadPool", Thread.NORM_PRIORITY));
-        gameServerPacketsThreadPool = new ThreadPoolExecutor(4, Integer.MAX_VALUE, 5L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new PriorityThreadFactory("Game Server Packet Pool", Thread.NORM_PRIORITY + 3));
-    }
+		public PriorityThreadFactory(String name, int prio) {
+			this.prio = prio;
+			this.name = name;
+			group = new ThreadGroup(this.name);
+		}
 
-    /**
-     * 定时线程执行器（公共）
-     *
-     * @param <T>
-     * @param r
-     * @param delay
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public <T extends Runnable> ScheduledFuture<T> schedule(T r, long delay) {
-        try {
-            if (delay < 0) {
-                delay = 0;
-            }
-            return (ScheduledFuture<T>) scheduledThreadPool.schedule(r, delay, TimeUnit.MILLISECONDS);
-        } catch (RejectedExecutionException e) {
-            return null;
-        }
-    }
+		@Override
+		public Thread newThread(Runnable r) {
+			Thread t = new Thread(group, r);
+			t.setName(name + "-" + threadNumber.getAndIncrement());
+			t.setPriority(prio);
+			t.setUncaughtExceptionHandler(new ThreadUncaughtExceptionHandler());
+			return t;
+		}
+	}
 
-    /**
-     * 定时，且以固定频率执行的线程执行器（公共）
-     *
-     * @param <T>
-     * @param r
-     * @param initial
-     * @param delay
-     * @return ScheduledFuture
-     */
-    @SuppressWarnings("unchecked")
-    public <T extends Runnable> ScheduledFuture<T> scheduleAtFixedRate(T r, long initial, long delay) {
-        try {
-            if (delay < 0) {
-                delay = 0;
-            }
-            if (initial < 0) {
-                initial = 0;
-            }
-            return (ScheduledFuture<T>) scheduledThreadPool.scheduleAtFixedRate(r, initial, delay, TimeUnit.MILLISECONDS);
-        } catch (RejectedExecutionException e) {
-            return null;
-        }
-    }
+	private static ThreadPoolManager instance = new ThreadPoolManager();
+	private static final Logger log = LoggerFactory
+			.getLogger(ThreadPoolManager.class);
 
-    /**
-     * 客户端接受包，线程执行器（专有）
-     *
-     * @param pkt
-     */
-    public void executeGsPacket(Runnable pkt) {
-        this.gameServerPacketsThreadPool.execute(pkt);
-    }
+	public static ThreadPoolManager getInstance() {
+		return instance;
+	}
 
-    /**
-     * 执行断开连接任务（专有）
-     *
-     * @param dt
-     * @param delay
-     */
-    @Override
-    public final void scheduleDisconnection(DisconnectionTask dt, long delay) {
-        if (delay < 0) {
-            delay = 0;
-        }
-        disconnectionScheduledThreadPool.schedule(dt, delay, TimeUnit.MILLISECONDS);
-    }
+	private ScheduledThreadPoolExecutor disconnectionScheduledThreadPool;
 
-    @Override
-    public void waitForDisconnectionTasks() {
-        try {
-            disconnectionScheduledThreadPool.shutdown();
-            disconnectionScheduledThreadPool.awaitTermination(6, TimeUnit.MINUTES);
-        } catch (Exception e) {
-        }
-    }
+	private ThreadPoolExecutor gameServerPacketsThreadPool;
 
-    /**
-     * PriorityThreadFactory creating new threads for ThreadPoolManager
-     *
-     */
-    private class PriorityThreadFactory implements ThreadFactory {
+	private ScheduledThreadPoolExecutor scheduledThreadPool;
 
-        private String name;
-        private int prio;
-        private AtomicInteger threadNumber = new AtomicInteger(1);
-        private ThreadGroup group;
+	private ThreadPoolManager() {
+		scheduledThreadPool = new ScheduledThreadPoolExecutor(4,
+				new PriorityThreadFactory("ScheduledThreadPool",
+						Thread.NORM_PRIORITY));
+		disconnectionScheduledThreadPool = new ScheduledThreadPoolExecutor(4,
+				new PriorityThreadFactory("DisconnectionScheduledThreadPool",
+						Thread.NORM_PRIORITY));
+		gameServerPacketsThreadPool = new ThreadPoolExecutor(4,
+				Integer.MAX_VALUE, 5L, TimeUnit.SECONDS,
+				new LinkedBlockingQueue<Runnable>(), new PriorityThreadFactory(
+						"Game Server Packet Pool", Thread.NORM_PRIORITY + 3));
+	}
 
-        public PriorityThreadFactory(String name, int prio) {
-            this.prio = prio;
-            this.name = name;
-            group = new ThreadGroup(this.name);
-        }
+	/**
+	 * 客户端接受包，线程执行器（专有）
+	 * 
+	 * @param pkt
+	 */
+	public void executeGsPacket(Runnable pkt) {
+		this.gameServerPacketsThreadPool.execute(pkt);
+	}
 
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(group, r);
-            t.setName(name + "-" + threadNumber.getAndIncrement());
-            t.setPriority(prio);
-            t.setUncaughtExceptionHandler(new ThreadUncaughtExceptionHandler());
-            return t;
-        }
-    }
+	/**
+	 * 定时线程执行器（公共）
+	 * 
+	 * @param <T>
+	 * @param r
+	 * @param delay
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public <T extends Runnable> ScheduledFuture<T> schedule(T r, long delay) {
+		try {
+			if (delay < 0) {
+				delay = 0;
+			}
+			return (ScheduledFuture<T>) scheduledThreadPool.schedule(r, delay,
+					TimeUnit.MILLISECONDS);
+		} catch (RejectedExecutionException e) {
+			return null;
+		}
+	}
 
-    /**
-     * Shutdown all thread pools.
-     */
-    public void shutdown() {
-        try {
-            scheduledThreadPool.shutdown();
-            gameServerPacketsThreadPool.shutdown();
-            scheduledThreadPool.awaitTermination(2, TimeUnit.SECONDS);
-            gameServerPacketsThreadPool.awaitTermination(2, TimeUnit.SECONDS);
-            log.info("All ThreadPools are now stopped");
-        } catch (InterruptedException e) {
-            log.error("Can't shutdown ThreadPoolManager", e);
-        }
-    }
+	/**
+	 * 定时，且以固定频率执行的线程执行器（公共）
+	 * 
+	 * @param <T>
+	 * @param r
+	 * @param initial
+	 * @param delay
+	 * @return ScheduledFuture
+	 */
+	@SuppressWarnings("unchecked")
+	public <T extends Runnable> ScheduledFuture<T> scheduleAtFixedRate(T r,
+			long initial, long delay) {
+		try {
+			if (delay < 0) {
+				delay = 0;
+			}
+			if (initial < 0) {
+				initial = 0;
+			}
+			return (ScheduledFuture<T>) scheduledThreadPool
+					.scheduleAtFixedRate(r, initial, delay,
+							TimeUnit.MILLISECONDS);
+		} catch (RejectedExecutionException e) {
+			return null;
+		}
+	}
+
+	/**
+	 * 执行断开连接任务（专有）
+	 * 
+	 * @param dt
+	 * @param delay
+	 */
+	@Override
+	public final void scheduleDisconnection(DisconnectionTask dt, long delay) {
+		if (delay < 0) {
+			delay = 0;
+		}
+		disconnectionScheduledThreadPool.schedule(dt, delay,
+				TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * Shutdown all thread pools.
+	 */
+	public void shutdown() {
+		try {
+			scheduledThreadPool.shutdown();
+			gameServerPacketsThreadPool.shutdown();
+			scheduledThreadPool.awaitTermination(2, TimeUnit.SECONDS);
+			gameServerPacketsThreadPool.awaitTermination(2, TimeUnit.SECONDS);
+			log.info("All ThreadPools are now stopped");
+		} catch (InterruptedException e) {
+			log.error("Can't shutdown ThreadPoolManager", e);
+		}
+	}
+
+	@Override
+	public void waitForDisconnectionTasks() {
+		try {
+			disconnectionScheduledThreadPool.shutdown();
+			disconnectionScheduledThreadPool.awaitTermination(6,
+					TimeUnit.MINUTES);
+		} catch (Exception e) {
+		}
+	}
 }
