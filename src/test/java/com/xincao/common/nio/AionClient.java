@@ -9,9 +9,6 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,32 +19,9 @@ import org.slf4j.LoggerFactory;
  */
 public class AionClient {
 
-    static class Client implements Runnable {
-
-        private String ip;
-        private short opcode;
-        private int port;
-
-        public Client(String ip, int port, short opcode) {
-            this.ip = ip;
-            this.port = port;
-            this.opcode = opcode;
-        }
-
-        @Override
-        public void run() {
-            try {
-                newClient(ip, port, opcode);
-            } catch (Exception e) {
-
-            }
-        }
-    }
-
     static class InputInfo implements Runnable {
 
-        private static final Logger logger = LoggerFactory
-                .getLogger(InputInfo.class);
+        private static final Logger logger = LoggerFactory.getLogger(InputInfo.class);
         private InputStream inputStream;
 
         public InputInfo(InputStream inputStream) {
@@ -61,8 +35,7 @@ public class AionClient {
             while ((c = byteBuffer.getChar()) != '\000') {
                 sb.append(c);
             }
-            logger.info(String.format("packet opcode = {%d} date = {%s}",
-                    opcode, sb.toString()));
+            logger.info(String.format("packet opcode = {%d} date = {%s}", opcode, sb.toString()));
             return true;
         }
 
@@ -93,13 +66,11 @@ public class AionClient {
             if (numRead < 0) {
                 return;
             } else {
-//				inputByteBuffer.position(numRead);
+                inputByteBuffer.position(numRead);
             }
             inputByteBuffer.flip();
             inputByteBuffer.mark();
-            while (inputByteBuffer.remaining() > 2
-                    && inputByteBuffer.remaining() >= inputByteBuffer
-                    .getShort(/*inputByteBuffer.position()*/)) { // 读取是否为一个整包（也可能大于一个整包（多个包），因此这里会使用循环）
+            while (inputByteBuffer.remaining() > 2 && inputByteBuffer.remaining() >= inputByteBuffer.getShort(inputByteBuffer.position())) { // 读取是否为一个整包（也可能大于一个整包（多个包），因此这里会使用循环）
                 if (!parse(inputByteBuffer)) { // 判断包是否合法
                     return;
                 }
@@ -154,11 +125,9 @@ public class AionClient {
                         }
                         for (int i = 0; i < num; i = i + 2) {
                             if (isInt(words[i])) {
-                                outputByteBuffer.putInt(new Integer(
-                                        words[i + 1]));
+                                outputByteBuffer.putInt(new Integer(words[i + 1]));
                             } else if (isShort(words[i])) {
-                                outputByteBuffer.putShort(new Short(
-                                        words[i + 1]));
+                                outputByteBuffer.putShort(new Short(words[i + 1]));
                             } else if (isString(words[i])) {
                                 String s = words[i + 1];
                                 outputByteBuffer.putInt(s.length());
@@ -170,14 +139,10 @@ public class AionClient {
                         }
                         int afterPosition = outputByteBuffer.position();
                         outputByteBuffer.position(sizePosition);
-                        outputByteBuffer
-                                .putShort((short) (afterPosition - sizePosition));
+                        outputByteBuffer.putShort((short) (afterPosition - sizePosition));
                         outputByteBuffer.position(afterPosition);
                         if (outputByteBuffer.hasArray()) {
-                            byte[] b = Arrays.copyOfRange(
-                                    outputByteBuffer.array(),
-                                    outputByteBuffer.arrayOffset(),
-                                    outputByteBuffer.position());
+                            byte[] b = Arrays.copyOfRange(outputByteBuffer.array(), outputByteBuffer.arrayOffset(), outputByteBuffer.position());
                             outputStream.write(b);
                         }
                         outputByteBuffer.clear();
@@ -211,17 +176,14 @@ public class AionClient {
     }
 
     public static void main(String... args) throws Exception {
-        BufferedReader cmdBufferReader = new BufferedReader(
-                new InputStreamReader(System.in));
+        BufferedReader cmdBufferReader = new BufferedReader(new InputStreamReader(System.in));
         String[] cmd = cmdBufferReader.readLine().split("\\s");
         String ip = "";
         int port = 0;
         short opcode = 0;
         int length = cmd.length;
-        if ((length > 0 && "help".equals(cmd[0])) || length == 0
-                || cmd[0].equals("")) {
-            System.out
-                    .println("use : {ip}, {port}, {opcode} if {ip} is null or {*} default '127.0.0.1'");
+        if ((length > 0 && "help".equals(cmd[0])) || length == 0 || cmd[0].equals("")) {
+            System.out.println("use : {ip}, {port}, {opcode} if {ip} is null or {*} default '127.0.0.1'");
             System.exit(1);
         } else if (length > 0 && cmd[0].equals("default")) {
             ip = "127.0.0.1";
@@ -240,24 +202,19 @@ public class AionClient {
             port = new Integer(cmd[1]);
             opcode = new Short(cmd[2]);
         }
-        ThreadPoolExecutor threadPool = new ThreadPoolExecutor(50,
-                Integer.MAX_VALUE, 5L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
         int loop = 0;
-        while (++loop <= 2000) {
-            Client client = new Client(ip, port, opcode);
-            threadPool.execute(client);
-            System.out.println("this is the " + loop + client);
+        while (++loop <= 1500) {
+            newClient (ip, port, opcode, loop);
         }
     }
 
-    private static void newClient(String ip, int port, short opcode) throws Exception {
+    private static void newClient(String ip, int port, short opcode, int no) throws Exception {
         Socket socket = new Socket(ip, port);
         OutputStream outputStream = socket.getOutputStream();
-        Thread outInfoThread = new Thread(new OutputInfo(outputStream, opcode), "write thread");
+        Thread outInfoThread = new Thread(new OutputInfo(outputStream, opcode), "write thread" + no);
         outInfoThread.start();
         InputStream inputStream = socket.getInputStream();
-        Thread inputInfoThread = new Thread(new InputInfo(inputStream), "read thread");
+        Thread inputInfoThread = new Thread(new InputInfo(inputStream), "read thread" + no);
         inputInfoThread.start();
     }
 }

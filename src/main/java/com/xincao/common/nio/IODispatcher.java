@@ -87,9 +87,7 @@ public class IODispatcher extends Dispatcher {
             buf.position(buf.position() + sz); // 写一个包数据开始处
             return con.processData(b);
         } catch (IllegalArgumentException e) {
-            logger.warn("Error on parsing input from client - account: " + con
-                    + " packet size: " + sz + " real size:" + buf.remaining(),
-                    e);
+            logger.warn("Error on parsing input from client - account: " + con + " packet size: " + sz + " real size:" + buf.remaining(), e);
             return false;
         }
     }
