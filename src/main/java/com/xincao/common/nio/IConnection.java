@@ -8,121 +8,120 @@ import java.nio.channels.SocketChannel;
 
 /**
  * 连接对象（整个网络层向项目中暴漏的唯一对象）
- * 
+ *
  * @author sunground-android
  */
 public abstract class IConnection {
 
-	protected boolean closed; // 关闭套接字管道
-	protected final Object guard = new Object();
-	private final IODispatcher ioDispatcher;
-	private final String ip;
-	protected boolean isForcedClosing;
-	private SelectionKey key;
-	private boolean locked = false;
-	protected boolean pendingClose;
-	public final ByteBuffer readBuffer;
-	private final SocketChannel socketChannel;
-	public final ByteBuffer writeBuffer;
+    protected boolean closed; // 关闭套接字管道
+    protected final Object guard = new Object();
+    private final IODispatcher ioDispatcher;
+    private final String ip;
+    protected boolean isForcedClosing;
+    private SelectionKey key;
+    private boolean locked = false;
+    protected boolean pendingClose;
+    public final ByteBuffer readBuffer;
+    private final SocketChannel socketChannel;
+    public final ByteBuffer writeBuffer;
 
-	public IConnection(SocketChannel sc, IODispatcher ioDispatcher)
-			throws IOException {
-		socketChannel = sc;
-		this.ioDispatcher = ioDispatcher;
-		writeBuffer = ByteBuffer.allocate(8192 * 2);
-		writeBuffer.flip();
-		writeBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		readBuffer = ByteBuffer.allocate(8192 * 2);
-		readBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		this.ioDispatcher.register(socketChannel, SelectionKey.OP_READ, this);
-		this.ip = socketChannel.socket().getInetAddress().getHostAddress();
-	}
+    public IConnection(SocketChannel sc, IODispatcher ioDispatcher) throws IOException {
+        socketChannel = sc;
+        this.ioDispatcher = ioDispatcher;
+        writeBuffer = ByteBuffer.allocate(8192 * 2);
+        writeBuffer.flip();
+        writeBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        readBuffer = ByteBuffer.allocate(8192 * 2);
+        readBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        this.ioDispatcher.register(socketChannel, SelectionKey.OP_READ, this);
+        this.ip = socketChannel.socket().getInetAddress().getHostAddress();
+    }
 
-	/**
-	 * 关闭连接
-	 * 
-	 * @param forced
-	 */
-	public final void close(boolean forced) {
-		synchronized (guard) {
-			if (isWriteDisabled()) {
-				return;
-			}
-			isForcedClosing = forced;
-			getIODispatcher().closeConnection(this);
-		}
-	}
+    /**
+     * 关闭连接
+     *
+     * @param forced
+     */
+    public final void close(boolean forced) {
+        synchronized (guard) {
+            if (isWriteDisabled()) {
+                return;
+            }
+            isForcedClosing = forced;
+            getIODispatcher().closeConnection(this);
+        }
+    }
 
-	/**
-	 * 关闭套接字管道
-	 */
-	public final boolean closeSocketChannel() {
-		synchronized (guard) {
-			if (closed) {
-				return false;
-			}
-			try {
-				if (socketChannel.isOpen()) {
-					socketChannel.close();
-					key.attach(null);
-					key.cancel();
-				}
-				closed = true;
-			} catch (IOException ignored) {
-			}
-		}
-		return true;
-	}
+    /**
+     * 关闭套接字管道
+     */
+    public final boolean closeSocketChannel() {
+        synchronized (guard) {
+            if (closed) {
+                return false;
+            }
+            try {
+                if (socketChannel.isOpen()) {
+                    socketChannel.close();
+                    key.attach(null);
+                    key.cancel();
+                }
+                closed = true;
+            } catch (IOException ignored) {
+            }
+        }
+        return true;
+    }
 
-	protected final void enableWriteInterest() {
-		if (key.isValid()) {
-			key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
-			key.selector().wakeup();
-		}
-	}
+    protected final void enableWriteInterest() {
+        if (key.isValid()) {
+            key.interestOps(key.interestOps() | SelectionKey.OP_WRITE);
+            key.selector().wakeup();
+        }
+    }
 
-	abstract protected long getDisconnectionDelay();
+    abstract protected long getDisconnectionDelay();
 
-	private IODispatcher getIODispatcher() {
-		return ioDispatcher;
-	}
+    private IODispatcher getIODispatcher() {
+        return ioDispatcher;
+    }
 
-	public final String getIP() {
-		return ip;
-	}
+    public final String getIP() {
+        return ip;
+    }
 
-	public SocketChannel getSocketChannel() {
-		return socketChannel;
-	}
+    public SocketChannel getSocketChannel() {
+        return socketChannel;
+    }
 
-	protected final boolean isPendingClose() {
-		return pendingClose && !closed;
-	}
+    protected final boolean isPendingClose() {
+        return pendingClose && !closed;
+    }
 
-	protected final boolean isWriteDisabled() {
-		return pendingClose || closed;
-	}
+    protected final boolean isWriteDisabled() {
+        return pendingClose || closed;
+    }
 
-	abstract protected void onDisconnect();
+    abstract protected void onDisconnect();
 
-	abstract protected void onServerClose();
+    abstract protected void onServerClose();
 
-	abstract protected boolean processData(ByteBuffer data);
+    abstract protected boolean processData(ByteBuffer data);
 
-	public final void setKey(SelectionKey key) {
-		this.key = key;
-	}
+    public final void setKey(SelectionKey key) {
+        this.key = key;
+    }
 
-	public boolean tryLockConnection() {
-		if (locked) {
-			return false;
-		}
-		return locked = true;
-	}
+    public boolean tryLockConnection() {
+        if (locked) {
+            return false;
+        }
+        return locked = true;
+    }
 
-	public void unlockConnection() {
-		locked = false;
-	}
+    public void unlockConnection() {
+        locked = false;
+    }
 
-	abstract protected boolean writeData(ByteBuffer data);
+    abstract protected boolean writeData(ByteBuffer data);
 }

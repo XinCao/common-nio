@@ -9,9 +9,8 @@ import com.xincao.common.nio.IODispatcher;
 
 public class AionConnectionFactoryImpl implements ConnectionFactory {
 
-	@Override
-	public IConnection create(SocketChannel socket, IODispatcher ioDispatcher)
-			throws IOException {
-		return new AionConnection(socket, ioDispatcher);
-	}
+    @Override
+    public IConnection create(SocketChannel socket, IODispatcher ioDispatcher) throws IOException {
+        return new AionConnection(socket, ioDispatcher);
+    }
 }
