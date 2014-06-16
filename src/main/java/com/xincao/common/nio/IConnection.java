@@ -24,6 +24,7 @@ public abstract class IConnection {
     public final ByteBuffer readBuffer;
     private final SocketChannel socketChannel;
     public final ByteBuffer writeBuffer;
+    private Object object;
 
     public IConnection(SocketChannel sc, IODispatcher ioDispatcher) throws IOException {
         socketChannel = sc;
@@ -124,4 +125,12 @@ public abstract class IConnection {
     }
 
     abstract protected boolean writeData(ByteBuffer data);
+
+    public <T extends Object> void setObject(T object) {
+        this.object = object;
+    }
+
+    public <T extends Object> T getObject() {
+        return (T)this.object;
+    }
 }

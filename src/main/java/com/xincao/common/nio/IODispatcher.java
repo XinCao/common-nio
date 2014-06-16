@@ -49,8 +49,7 @@ public class IODispatcher extends Dispatcher {
         if (selector.select() <= 0) {
             return;
         }
-        Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys()
-                .iterator();
+        Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
         while (selectedKeys.hasNext()) {
             SelectionKey key = selectedKeys.next();
             selectedKeys.remove();
