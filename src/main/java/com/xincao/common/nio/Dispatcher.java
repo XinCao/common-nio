@@ -4,18 +4,14 @@ import java.io.IOException;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * 监听器（IO seletor） （接受，可读，可写）
  *
- * @author caoxin
+ * @author 510655387@qq.com
  */
 public abstract class Dispatcher extends Thread {
 
     protected final Object gate = new Object(); // Object on witch register vs selector.select are synchronized
-    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final Selector selector;
 
     public Dispatcher(String name) throws IOException {
@@ -33,7 +29,7 @@ public abstract class Dispatcher extends Thread {
                 synchronized (gate) {
                 }
             } catch (IOException e) {
-                logger.error("Dispatcher error! " + e, e);
+                Logger.error("Dispatcher error! " + e.getMessage());
             }
         }
     }

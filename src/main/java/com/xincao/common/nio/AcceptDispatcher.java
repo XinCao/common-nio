@@ -8,7 +8,7 @@ import java.util.Iterator;
 /**
  * 新创建连接监听
  *
- * @author caoxin
+ * @author 510655387@qq.com
  */
 public class AcceptDispatcher extends Dispatcher {
 
@@ -20,7 +20,7 @@ public class AcceptDispatcher extends Dispatcher {
         try {
             ((Acceptor) key.attachment()).accept(key);
         } catch (IOException e) {
-            logger.error("Error while accepting connection: +" + e, e);
+            Logger.error("Error while accepting connection: +" + e.getMessage());
         }
     }
 

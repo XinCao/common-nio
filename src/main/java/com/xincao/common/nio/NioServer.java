@@ -7,12 +7,8 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class NioServer {
 
-    private static final Logger logger = LoggerFactory.getLogger(NioServer.class);
     private AcceptDispatcher acceptDispatcher;
     private final ServerCfg[] cfgs;
     private int currentIODispatcher = 0;
@@ -26,7 +22,7 @@ public class NioServer {
         if (ioThreads > 0) {
             this.ioThreads = ioThreads;
         } else {
-            logger.info("ioThreads num is default = {}", this.ioThreads);
+            Logger.info("ioThreads num is default = " + this.ioThreads);
         }
         this.cfgs = cfgs;
     }
@@ -58,17 +54,17 @@ public class NioServer {
                 InetSocketAddress isa;
                 if ("*".equals(cfg.hostName)) {
                     isa = new InetSocketAddress(cfg.port);
-                    logger.info("Server listening on all available IPs on Port " + cfg.port + " for " + cfg.connectionName);
+                    Logger.info("Server listening on all available IPs on Port " + cfg.port + " for " + cfg.connectionName);
                 } else {
                     isa = new InetSocketAddress(cfg.hostName, cfg.port);
-                    logger.info("Server listening on IP: " + cfg.hostName + " Port " + cfg.port + " for " + cfg.connectionName);
+                    Logger.info("Server listening on IP: " + cfg.hostName + " Port " + cfg.port + " for " + cfg.connectionName);
                 }
                 serverChannel.socket().bind(isa);
                 SelectionKey acceptKey = getAcceptDispatcher().register(serverChannel, SelectionKey.OP_ACCEPT, new Acceptor(cfg.factory, this));
                 serverChannelKeys.add(acceptKey);
             }
         } catch (IOException e) {
-            logger.error("NioServer Initialization Error: " + e, e);
+            Logger.error("NioServer Initialization Error: " + e.getMessage());
             throw new Error("NioServer Initialization Error!");
         }
     }
@@ -94,7 +90,7 @@ public class NioServer {
                 count += d.selector().keys().size();
             }
         } else {
-            logger.error("ioDispatchers array is null");
+            Logger.error("ioDispatchers array is null");
         }
         return count;
     }
@@ -133,30 +129,30 @@ public class NioServer {
      * 服务器关闭
      */
     public final void shutdown() {
-        logger.info("Closing ServerChannels...");
+        Logger.info("Closing ServerChannels...");
         try {
             for (SelectionKey key : serverChannelKeys) {
                 key.cancel();
             }
-            logger.info("ServerChannel closed.");
+            Logger.info("ServerChannel closed.");
         } catch (Exception e) {
-            logger.error("Error during closing ServerChannel, " + e, e);
+            Logger.error("Error during closing ServerChannel, " + e.getMessage());
         }
         this.notifyServerClose();
         try {
             Thread.sleep(1000);
         } catch (InterruptedException t) {
-            logger.warn("Nio thread was interrupted during shutdown", t);
+            Logger.warn("Nio thread was interrupted during shutdown" + t.getMessage());
         }
-        logger.info(" Active connections: " + getActiveConnections());
-        logger.info("Forced Disconnecting all connections...");
+        Logger.info(" Active connections: " + getActiveConnections());
+        Logger.info("Forced Disconnecting all connections...");
         this.closeAll();
-        logger.info(" Active connections: " + getActiveConnections());
+        Logger.info(" Active connections: " + getActiveConnections());
         dcPool.waitForDisconnectionTasks();
         try {
             Thread.sleep(1000);
         } catch (InterruptedException t) {
-            logger.warn("Nio thread was interrupted during shutdown", t);
+            Logger.warn("Nio thread was interrupted during shutdown " + t.getMessage());
         }
     }
 

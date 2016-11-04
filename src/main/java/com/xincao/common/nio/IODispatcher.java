@@ -86,7 +86,7 @@ public class IODispatcher extends Dispatcher {
             buf.position(buf.position() + sz); // 写一个包数据开始处
             return con.processData(b);
         } catch (IllegalArgumentException e) {
-            logger.warn("Error on parsing input from client - account: " + con + " packet size: " + sz + " real size:" + buf.remaining(), e);
+            Logger.warn("Error on parsing input from client - account: " + con + " packet size: " + sz + " real size:" + buf.remaining() + e.getMessage());
             return false;
         }
     }
@@ -161,7 +161,7 @@ public class IODispatcher extends Dispatcher {
                 return;
             }
             if (numWrite == 0) {
-                logger.info("Write " + numWrite + " ip: " + con.getIP());
+                Logger.info("Write " + numWrite + " ip: " + con.getIP());
                 return;
             }
             if (wb.hasRemaining()) { // 不能被写的数据
@@ -182,7 +182,7 @@ public class IODispatcher extends Dispatcher {
                 return;
             }
             if (numWrite == 0) {
-                logger.info("Write " + numWrite + " ip: " + con.getIP());
+                Logger.info("Write " + numWrite + " ip: " + con.getIP());
                 return;
             }
             if (wb.hasRemaining()) { // 不能被写的数据

@@ -7,10 +7,6 @@ import java.util.ListIterator;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.xincao.common.nio.packet.BaseClientPacket;
 
 /**
@@ -40,7 +36,7 @@ public class PacketProcessor<T extends IConnection> {
                     }
                 } else if (sizeNow > lastSize && sizeNow > increaseThreshold) {
                     if (!newThread() && sizeNow >= increaseThreshold * 3) {
-                        log.info("Lagg detected! ["
+                        Logger.info("Lagg detected! ["
                                 + sizeNow
                                 + " client packets are waiting for execution]. You should consider increasing PacketProcessor maxThreads or hardware upgrade.");
                     }
@@ -74,7 +70,6 @@ public class PacketProcessor<T extends IConnection> {
     }
 
     private final static int increaseThreshold = 50; // 最大阈值
-    private final static Logger log = LoggerFactory.getLogger(PacketProcessor.class);
     private final static int reduceThreshold = 3; // 最小阈值
     private final Lock lock = new ReentrantLock();
     private final int maxThreads;
@@ -132,7 +127,7 @@ public class PacketProcessor<T extends IConnection> {
     private void killThread() {
         if (threads.size() < minThreads) {
             Thread t = threads.remove((threads.size() - 1));
-            log.debug("Killing PacketProcessor Thread: " + t.getName());
+            Logger.info("Killing PacketProcessor Thread: " + t.getName());
             t.interrupt();
         }
     }
@@ -142,7 +137,7 @@ public class PacketProcessor<T extends IConnection> {
             return false;
         }
         String name = "PacketProcessor:" + threads.size();
-        log.debug("Creating new PacketProcessor Thread: " + name);
+        Logger.info("Creating new PacketProcessor Thread: " + name);
         Thread t = new Thread(new PacketProcessorTask(), name);
         threads.add(t);
         t.start();
