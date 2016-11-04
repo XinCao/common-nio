@@ -1,3 +1,6 @@
+/**
+ * 欢迎浏览和修改代码，有任何想法可以email我
+ */
 package com.br.common.nio;
 
 import java.util.Date;

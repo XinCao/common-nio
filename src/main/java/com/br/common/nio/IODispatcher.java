@@ -1,3 +1,6 @@
+/**
+ * 欢迎浏览和修改代码，有任何想法可以email我
+ */
 package com.br.common.nio;
 
 import java.io.IOException;
@@ -13,7 +16,7 @@ import java.util.List;
 /**
  * 连接IO监听
  *
- * @author caoxin
+ * @author 510655387@qq.com
  */
 public class IODispatcher extends Dispatcher {
 

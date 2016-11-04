@@ -1,10 +1,17 @@
+/**
+ * 欢迎浏览和修改代码，有任何想法可以email我
+ */
 package com.br.common.nio.packet;
 
 import java.nio.ByteBuffer;
-
 import com.br.common.nio.IConnection;
 import com.br.common.nio.Logger;
 
+/**
+ * 
+ * @author 510655387@qq.com
+ * @param <T> 
+ */
 public abstract class BaseClientPacket<T extends IConnection> extends BasePacket implements Runnable {
 
     private ByteBuffer buf;

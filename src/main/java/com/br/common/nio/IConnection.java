@@ -1,3 +1,6 @@
+/**
+ * 欢迎浏览和修改代码，有任何想法可以email我
+ */
 package com.br.common.nio;
 
 import java.io.IOException;
@@ -9,7 +12,7 @@ import java.nio.channels.SocketChannel;
 /**
  * 连接对象（整个网络层向项目中暴漏的唯一对象）
  *
- * @author sunground-android
+ * @author 510655387@qq.com
  */
 public abstract class IConnection {
 

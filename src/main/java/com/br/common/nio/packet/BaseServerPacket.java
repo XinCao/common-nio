@@ -1,7 +1,14 @@
+/**
+ * 欢迎浏览和修改代码，有任何想法可以email我
+ */
 package com.br.common.nio.packet;
 
 import java.nio.ByteBuffer;
 
+/**
+ * 
+ * @author 510655387@qq.com
+ */
 public abstract class BaseServerPacket extends BasePacket {
 
     protected BaseServerPacket() {

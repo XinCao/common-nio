@@ -1,3 +1,6 @@
+/**
+ * 欢迎浏览和修改代码，有任何想法可以email我
+ */
 package com.br.common.nio;
 
 import java.io.IOException;
@@ -7,6 +10,10 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 
+ * @author 510655387@qq.com
+ */
 public class NioServer {
 
     private AcceptDispatcher acceptDispatcher;

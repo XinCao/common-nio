@@ -1,5 +1,12 @@
+/**
+ * 欢迎浏览和修改代码，有任何想法可以email我
+ */
 package com.br.common.nio.packet;
 
+/**
+ * 
+ * @author 510655387@qq.com
+ */
 public abstract class BasePacket {
 
     public static enum PacketType {

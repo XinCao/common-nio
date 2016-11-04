@@ -1,3 +1,6 @@
+/**
+ * 欢迎浏览和修改代码，有任何想法可以email我
+ */
 package com.br.common.nio;
 
 import java.util.ArrayList;
@@ -8,12 +11,10 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import com.br.common.nio.packet.BaseClientPacket;
-import java.nio.channels.SelectionKey;
 
 /**
- * 包处理器
- *
- * @author caoxin
+ * 
+ * @author 510655387@qq.com
  * @param <T>
  */
 public class PacketProcessor<T extends IConnection> {
