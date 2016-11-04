@@ -1,4 +1,4 @@
-package com.xincao.common.nio.packet;
+package com.br.common.nio.packet;
 
 import java.nio.ByteBuffer;
 

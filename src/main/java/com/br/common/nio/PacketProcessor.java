@@ -1,4 +1,4 @@
-package com.xincao.common.nio;
+package com.br.common.nio;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -7,7 +7,8 @@ import java.util.ListIterator;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import com.xincao.common.nio.packet.BaseClientPacket;
+import com.br.common.nio.packet.BaseClientPacket;
+import java.nio.channels.SelectionKey;
 
 /**
  * 包处理器
@@ -76,7 +77,7 @@ public class PacketProcessor<T extends IConnection> {
     private final int minThreads;
     private final Condition notEmpty = lock.newCondition();
 
-    private final List<BaseClientPacket<T>> packets = new LinkedList<>();
+    private final List<BaseClientPacket<T>> packets = new LinkedList<BaseClientPacket<T>>();
 
     private final List<Thread> threads = new ArrayList<Thread>();
 

@@ -1,4 +1,4 @@
-package com.xincao.common.nio;
+package com.br.common.nio;
 
 import java.util.Date;
 

@@ -1,4 +1,4 @@
-package com.xincao.common.nio;
+package com.br.common.nio;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -18,7 +18,7 @@ import java.util.List;
 public class IODispatcher extends Dispatcher {
 
     private final DisconnectionThreadPool dcPool;
-    private final List<IConnection> pendingClose = new ArrayList<>();
+    private final List<IConnection> pendingClose = new ArrayList<IConnection>();
 
     public IODispatcher(String name, DisconnectionThreadPool dcPool)
             throws IOException {

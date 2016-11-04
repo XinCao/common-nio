@@ -1,4 +1,4 @@
-package com.xincao.common.nio;
+package com.br.common.nio;
 
 public class ServerCfg {
 

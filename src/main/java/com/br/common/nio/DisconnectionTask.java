@@ -1,4 +1,4 @@
-package com.xincao.common.nio;
+package com.br.common.nio;
 
 /**
  * 断开连接任务(例如，备份)

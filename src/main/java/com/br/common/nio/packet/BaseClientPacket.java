@@ -1,9 +1,9 @@
-package com.xincao.common.nio.packet;
+package com.br.common.nio.packet;
 
 import java.nio.ByteBuffer;
 
-import com.xincao.common.nio.IConnection;
-import com.xincao.common.nio.Logger;
+import com.br.common.nio.IConnection;
+import com.br.common.nio.Logger;
 
 public abstract class BaseClientPacket<T extends IConnection> extends BasePacket implements Runnable {
 

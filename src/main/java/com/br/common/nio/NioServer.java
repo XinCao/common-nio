@@ -1,4 +1,4 @@
-package com.xincao.common.nio;
+package com.br.common.nio;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -15,7 +15,7 @@ public class NioServer {
     private final DisconnectionThreadPool dcPool;
     private IODispatcher[] ioDispatchers;
     private int ioThreads = 5;
-    private final List<SelectionKey> serverChannelKeys = new ArrayList<>();
+    private final List<SelectionKey> serverChannelKeys = new ArrayList<SelectionKey>();
 
     public NioServer(int ioThreads, DisconnectionThreadPool dcPool, ServerCfg... cfgs) {
         this.dcPool = dcPool;
